@@ -12,9 +12,18 @@ import { BookingStateService } from '../../features/booking/services/booking-sta
         <div class="flex h-14 w-14 items-center justify-center rounded-full bg-green-50 text-2xl text-green-600">
           ✓
         </div>
-        <h1 class="text-lg font-semibold text-slate-900">Agendamento confirmado!</h1>
+        <!-- <h1 class="text-lg font-semibold text-slate-900">Agendamento confirmado!</h1>
         <p class="text-sm text-slate-500">
           Enviamos os detalhes do seu agendamento pelo WhatsApp.
+        </p> -->
+
+        <h1 class="text-lg font-semibold text-slate-900">
+          Pagamento realizado!
+        </h1>
+
+        <p class="text-sm text-slate-500">
+          Seu pagamento foi recebido e estamos confirmando seu agendamento.
+          Você receberá os detalhes pelo WhatsApp.
         </p>
 
         <dl class="mt-2 grid w-full grid-cols-2 gap-y-2 rounded-xl bg-slate-50 p-4 text-left text-sm">

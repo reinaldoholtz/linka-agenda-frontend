@@ -11,8 +11,13 @@ export interface CreatePaymentRequest extends PaymentDetails {
 }
 
 export interface CreatePaymentResult {
-  paymentId: string;
+  id: string;
+  appointmentId: string;
+  amount: number;
+  paymentMethod: string;
+  gateway: string;
   status: string;
+  invoiceUrl: string | null;
 }
 
 /**
@@ -29,6 +34,13 @@ export class PaymentsApiService {
     return this.http.post<ApiResponse<CreatePaymentResult>>(
       `${environment.apiBaseUrl}/payments`,
       request
+    );
+  }
+
+
+  getAvailablePaymentMethods(appointmentId: string): Observable<ApiResponse<string[]>> {
+    return this.http.get<ApiResponse<string[]>>(
+      `${environment.apiBaseUrl}/payments/methods/${appointmentId}`
     );
   }
 }
