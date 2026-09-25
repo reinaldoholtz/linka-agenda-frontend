@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
-import { PaymentDetails } from '../models/booking.model';
+import { AvailablePaymentMethodsResponse, PaymentConfirmation, PaymentDetails } from '../models/booking.model';
 
 export interface CreatePaymentRequest extends PaymentDetails {
   token: string;
@@ -38,9 +38,15 @@ export class PaymentsApiService {
   }
 
 
-  getAvailablePaymentMethods(appointmentId: string): Observable<ApiResponse<string[]>> {
-    return this.http.get<ApiResponse<string[]>>(
+  getAvailablePaymentMethods(appointmentId: string): Observable<AvailablePaymentMethodsResponse> {
+    return this.http.get<AvailablePaymentMethodsResponse>(
       `${environment.apiBaseUrl}/payments/methods/${appointmentId}`
     );
+  }
+
+  confirmStripePayment(  sessionId: string): Observable<ApiResponse<PaymentConfirmation>> {
+      return this.http.get<ApiResponse<PaymentConfirmation>>(
+        `${environment.apiBaseUrl}/payments/stripe/confirm/${sessionId}`
+      );
   }
 }

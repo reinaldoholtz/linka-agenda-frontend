@@ -82,58 +82,75 @@ import { StripeService } from '../services/stripe.service';
 
           <!-- Forma de pagamento -->
           <div>
-
-            <label class="mb-1 block text-sm font-medium text-slate-700">
+            <label class="mb-2 block text-sm font-medium text-slate-700">
               Forma de pagamento
             </label>
 
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div class="flex flex-wrap gap-2">
 
               @if (availablePaymentMethods.includes('PIX')) {
-
                 <button
                   type="button"
                   (click)="setMethod('PIX')"
-                  class="rounded-lg border py-3 text-sm font-medium"
+                  class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition"
                   [class.border-brand-500]="form.value.method === 'PIX'"
                   [class.bg-brand-50]="form.value.method === 'PIX'"
+                  [class.text-brand-700]="form.value.method === 'PIX'"
                   [class.border-slate-200]="form.value.method !== 'PIX'"
+                  [class.text-slate-600]="form.value.method !== 'PIX'"
                 >
+                  <span
+                    class="flex h-4 w-4 items-center justify-center rounded-full border"
+                    [class.border-brand-500]="form.value.method === 'PIX'"
+                    [class.bg-brand-500]="form.value.method === 'PIX'"
+                    [class.border-slate-300]="form.value.method !== 'PIX'"
+                  >
+                    @if (form.value.method === 'PIX') {
+                      <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                    }
+                  </span>
+
                   PIX
                 </button>
-
               }
 
               @if (availablePaymentMethods.includes('CREDIT_CARD')) {
-
                 <button
                   type="button"
                   (click)="setMethod('CREDIT_CARD')"
-                  class="rounded-lg border py-3 text-sm font-medium"
+                  class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition"
                   [class.border-brand-500]="form.value.method === 'CREDIT_CARD'"
                   [class.bg-brand-50]="form.value.method === 'CREDIT_CARD'"
+                  [class.text-brand-700]="form.value.method === 'CREDIT_CARD'"
                   [class.border-slate-200]="form.value.method !== 'CREDIT_CARD'"
+                  [class.text-slate-600]="form.value.method !== 'CREDIT_CARD'"
                 >
+                  <span
+                    class="flex h-4 w-4 items-center justify-center rounded-full border"
+                    [class.border-brand-500]="form.value.method === 'CREDIT_CARD'"
+                    [class.bg-brand-500]="form.value.method === 'CREDIT_CARD'"
+                    [class.border-slate-300]="form.value.method !== 'CREDIT_CARD'"
+                  >
+                    @if (form.value.method === 'CREDIT_CARD') {
+                      <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                    }
+                  </span>
+
                   Cartão de crédito
                 </button>
-
               }
 
             </div>
 
             @if (availablePaymentMethods.length === 0) {
-
               <p class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                 Nenhuma forma de pagamento está disponível no momento.
               </p>
-
             }
-
           </div>
 
           <!-- Nome -->
           <div>
-
             <label class="mb-1 block text-sm font-medium text-slate-700">
               Nome completo
             </label>
@@ -141,30 +158,14 @@ import { StripeService } from '../services/stripe.service';
             <input
               formControlName="name"
               type="text"
-              class="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm"
+              autocomplete="name"
+              placeholder="Digite seu nome completo"
+              class="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
-
           </div>
 
-          <!-- Documento -->
+          <!-- E-mail -->
           <div>
-
-            <label class="mb-1 block text-sm font-medium text-slate-700">
-              CPF/CNPJ
-            </label>
-
-            <input
-              formControlName="document"
-              type="text"
-              inputmode="numeric"
-              class="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm"
-            />
-
-          </div>
-
-          <!-- Email -->
-          <div>
-
             <label class="mb-1 block text-sm font-medium text-slate-700">
               E-mail
             </label>
@@ -172,11 +173,11 @@ import { StripeService } from '../services/stripe.service';
             <input
               formControlName="email"
               type="email"
-              class="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm"
+              autocomplete="email"
+              placeholder="seu@email.com"
+              class="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
-
           </div>
-
           @if (errorMessage) {
 
             <p class="rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">
@@ -206,7 +207,7 @@ import { StripeService } from '../services/stripe.service';
               "
               class="flex-1 rounded-xl bg-brand-600 py-3 font-medium text-white disabled:opacity-40"
             >
-              {{ submitting ? 'Processando…' : 'Pagar' }}
+              {{ submitting ? 'Processando…' : 'Continuar' }}
             </button>
 
           </div>
@@ -234,33 +235,27 @@ export class Step4PaymentComponent implements OnInit {
   readonly form: ReturnType<FormBuilder['group']>;
 
   constructor(
-    readonly bookingState: BookingStateService,
-    private readonly fb: FormBuilder,
-    private readonly paymentsApi: PaymentsApiService,
-    private readonly stripeService: StripeService,
-  ) {
-
+        readonly bookingState: BookingStateService,
+        private readonly fb: FormBuilder,
+        private readonly paymentsApi: PaymentsApiService,
+        private readonly stripeService: StripeService,
+      ) {
     this.form = this.fb.group({
-      method: this.fb.control<PaymentMethod | null>(null),
+            method: this.fb.control<PaymentMethod | null>(null),
 
-      name: this.fb.control('', {
-        nonNullable: true,
-        validators: [Validators.required]
-      }),
+            name: this.fb.control('', {
+              nonNullable: true,
+              validators: [Validators.required]
+            }),
 
-      document: this.fb.control('', {
-        nonNullable: true,
-        validators: [Validators.required]
-      }),
-
-      email: this.fb.control('', {
-        nonNullable: true,
-        validators: [
-          Validators.required,
-          Validators.email
-        ]
-      }),
-    });
+            email: this.fb.control('', {
+              nonNullable: true,
+              validators: [
+                Validators.required,
+                Validators.email
+              ]
+            }),
+          });
   }
 
   ngOnInit(): void {
@@ -279,13 +274,9 @@ export class Step4PaymentComponent implements OnInit {
     this.loadAvailablePaymentMethods(appointmentId);
   }
 
-  private loadAvailablePaymentMethods(
-    appointmentId: string
-  ): void {
-
+  private loadAvailablePaymentMethods(appointmentId: string): void {
     this.loadingPaymentMethods = true;
     this.errorMessage = null;
-
     this.paymentsApi
       .getAvailablePaymentMethods(appointmentId)
       .subscribe({
@@ -294,25 +285,22 @@ export class Step4PaymentComponent implements OnInit {
 
           this.loadingPaymentMethods = false;
 
-          if (!response.success || !response.data) {
-
-            this.errorMessage =
-              response.message ??
-              'Não foi possível carregar as formas de pagamento.';
-
-            return;
-          }
+          console.log('Payment methods response:', response);
 
           this.availablePaymentMethods =
-            response.data as PaymentMethod[];
+            response.paymentMethods as PaymentMethod[];
 
-          /*
-           * Seleciona automaticamente a primeira opção disponível.
-           *
-           * ASAAS  -> PIX
-           * STRIPE -> CREDIT_CARD
-           */
+          console.log(
+            'Métodos de pagamento disponíveis:',
+            this.availablePaymentMethods
+          );
+
           if (this.availablePaymentMethods.length > 0) {
+
+            console.log(
+              'Método de pagamento selecionado automaticamente:',
+              this.availablePaymentMethods[0]
+            );
 
             this.form.patchValue({
               method: this.availablePaymentMethods[0]
@@ -323,6 +311,11 @@ export class Step4PaymentComponent implements OnInit {
         error: (err) => {
 
           this.loadingPaymentMethods = false;
+
+          console.error(
+            'Erro ao carregar métodos de pagamento:',
+            err
+          );
 
           this.errorMessage =
             err?.error?.message ??
@@ -363,7 +356,6 @@ export class Step4PaymentComponent implements OnInit {
     const {
       method,
       name,
-      document,
       email
     } = this.form.getRawValue();
 
@@ -391,7 +383,6 @@ export class Step4PaymentComponent implements OnInit {
     this.bookingState.setPayment({
       method,
       name,
-      document,
       email
     });
 
@@ -403,25 +394,20 @@ export class Step4PaymentComponent implements OnInit {
       appointmentId,
       method,
       name,
-      document,
       email
     }).subscribe({
-
       next: (response) => {
-
         if (!response.success || !response.data) {
-
           this.submitting = false;
-
-          this.errorMessage =
-            response.message ??
-            'Não foi possível criar o pagamento.';
-
+          this.errorMessage = response.message ?? 'Não foi possível criar o pagamento.';
           return;
         }
 
         const payment = response.data;
 
+        console.log('Payment criado pelo backend:', payment);
+        console.log('Gateway:', payment.gateway);
+        console.log('Invoice URL:', payment.invoiceUrl);
         /*
          * O backend é quem determina o gateway.
          *
@@ -437,9 +423,18 @@ export class Step4PaymentComponent implements OnInit {
 
         if (payment.gateway === 'STRIPE') {
 
+          console.log('Stripe payment response:', payment);
+
           const checkoutUrl = payment.invoiceUrl;
 
+          console.log('Stripe Checkout URL:', checkoutUrl);
+
           if (!checkoutUrl) {
+
+            console.error(
+              'Stripe Checkout URL não encontrada.',
+              payment
+            );
 
             this.submitting = false;
 
@@ -449,9 +444,9 @@ export class Step4PaymentComponent implements OnInit {
             return;
           }
 
-          this.stripeService
-            .redirectToCheckout(checkoutUrl);
+          console.log('Redirecionando para Stripe Checkout:',checkoutUrl);
 
+          this.stripeService.redirectToCheckout(checkoutUrl);
           return;
         }
 
