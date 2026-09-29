@@ -27,6 +27,10 @@ export interface AppointmentResult {
   reservationExpiresAt: string | null;
 }
 
+export interface CancelReservationRequest {
+  token: string;
+}
+
 /**
  * Consome POST /api/appointments/reserve. O backend valida o token, confere
  * conflitos e a disponibilidade real (Z-PRO + Google Calendar) antes de
@@ -41,6 +45,13 @@ export class AppointmentsApiService {
     return this.http.post<ApiResponse<AppointmentResult>>(
       `${environment.apiBaseUrl}/appointments/reserve`,
       request
+    );
+  }
+
+  cancelReservation(appointmentId: string, request: CancelReservationRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(
+      `${environment.apiBaseUrl}/appointments/${appointmentId}/cancel-reservation`,
+      request,
     );
   }
 }

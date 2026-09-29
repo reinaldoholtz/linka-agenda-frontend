@@ -54,6 +54,10 @@ export class BookingStateService {
     this.appointmentId.set(appointmentId);
   }
 
+  clearAppointmentId(): void {
+    this.appointmentId.set(null);
+  }
+
   setPayment(payment: PaymentDetails): void {
     this.payment.set(payment);
   }

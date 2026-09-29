@@ -64,7 +64,7 @@
           "options": {
             "host": "0.0.0.0",
             "allowedHosts": [
-              "85b1-2a01-e0a-fff-52e0-bd8c-7312-9f23-51b4.ngrok-free.app"
+              ".ngrok-free.app"
             ]
           },
           "configurations": {

@@ -1,12 +1,7 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { BookingStateService } from '../services/booking-state.service';
 import { AvailabilityApiService, AvailableDay } from '../services/availability-api.service';
-import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/appointments-api.service';
 
-/**
- * Tela 3 — Data e horário. Layout mobile-first: dias em linha horizontal,
- * horários em grid, seguindo a seção 24 da especificação.
- */
 @Component({
   selector: 'app-step3-datetime',
   standalone: true,
@@ -27,14 +22,9 @@ import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/a
       @if (!loading && days.length > 0) {
         <div class="flex gap-2 overflow-x-auto pb-1">
           @for (day of days; track day.date) {
-            <button
-              type="button"
-              (click)="selectDay(day)"
-              class="flex min-w-[64px] flex-col items-center rounded-xl border px-3 py-2 text-sm"
-              [class.border-brand-500]="selectedDay?.date === day.date"
-              [class.bg-brand-50]="selectedDay?.date === day.date"
-              [class.border-slate-200]="selectedDay?.date !== day.date"
-            >
+            <button type="button" (click)="selectDay(day)" class="flex min-w-[64px] flex-col items-center rounded-xl border px-3 py-2 text-sm"
+              [class.border-brand-500]="selectedDay?.date === day.date" [class.bg-brand-50]="selectedDay?.date === day.date"
+              [class.border-slate-200]="selectedDay?.date !== day.date">
               {{ formatDayLabel(day.date) }}
             </button>
           }
@@ -43,15 +33,9 @@ import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/a
         @if (selectedDay) {
           <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
             @for (time of selectedDay.slots; track time) {
-              <button
-                type="button"
-                (click)="selectTime(time)"
-                class="rounded-lg border px-2 py-3 text-center text-sm font-medium"
-                [class.border-brand-500]="selectedTime === time"
-                [class.bg-brand-600]="selectedTime === time"
-                [class.text-white]="selectedTime === time"
-                [class.border-slate-200]="selectedTime !== time"
-              >
+              <button type="button" (click)="selectTime(time)" class="rounded-lg border px-2 py-3 text-center text-sm font-medium"
+                [class.border-brand-500]="selectedTime === time" [class.bg-brand-600]="selectedTime === time"
+                [class.text-white]="selectedTime === time" [class.border-slate-200]="selectedTime !== time">
                 {{ time }}
               </button>
             }
@@ -60,17 +44,9 @@ import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/a
       }
 
       <div class="flex gap-3 pt-2">
-        <button type="button" (click)="back.emit()" class="flex-1 rounded-xl border border-slate-200 py-3 font-medium text-slate-600">
-          Voltar
-        </button>
-        <button
-          type="button"
-          [disabled]="!selectedDay || !selectedTime || reserving"
-          (click)="confirmSelection()"
-          class="flex-1 rounded-xl bg-brand-600 py-3 font-medium text-white disabled:opacity-40"
-        >
-          {{ reserving ? 'Reservando…' : 'Continuar' }}
-        </button>
+        <button type="button" (click)="back.emit()" class="flex-1 rounded-xl border border-slate-200 py-3 font-medium text-slate-600">Voltar</button>
+        <button type="button" [disabled]="!selectedDay || !selectedTime" (click)="confirmSelection()"
+          class="flex-1 rounded-xl bg-brand-600 py-3 font-medium text-white disabled:opacity-40">Continuar</button>
       </div>
     </div>
   `,
@@ -80,7 +56,6 @@ export class Step3DatetimeComponent implements OnInit {
   @Output() back = new EventEmitter<void>();
 
   loading = true;
-  reserving = false;
   errorMessage: string | null = null;
   days: AvailableDay[] = [];
   selectedDay: AvailableDay | null = null;
@@ -89,7 +64,6 @@ export class Step3DatetimeComponent implements OnInit {
   constructor(
     private readonly bookingState: BookingStateService,
     private readonly availabilityApi: AvailabilityApiService,
-    private readonly appointmentsApi: AppointmentsApiService,
   ) {}
 
   ngOnInit(): void {
@@ -104,13 +78,19 @@ export class Step3DatetimeComponent implements OnInit {
       next: (response) => {
         this.loading = false;
         this.days = response.data ?? [];
-
         if (this.days.length === 0) {
           this.errorMessage = 'Nenhum horário disponível encontrado.';
           return;
         }
 
-        // Seleciona automaticamente o primeiro dia disponível
+        const savedSlot = this.bookingState.selectedTimeSlot();
+        const savedDay = savedSlot ? this.days.find((day) => day.date === savedSlot.date) : undefined;
+        if (savedDay?.slots.includes(savedSlot!.time)) {
+          this.selectedDay = savedDay;
+          this.selectedTime = savedSlot!.time;
+          return;
+        }
+
         this.selectedDay = this.days[0];
         this.selectedTime = null;
       },
@@ -131,66 +111,12 @@ export class Step3DatetimeComponent implements OnInit {
   }
 
   confirmSelection(): void {
-    if (!this.selectedDay || !this.selectedTime || this.reserving) {
+    if (!this.selectedDay || !this.selectedTime) {
       return;
     }
 
-    const token = this.bookingState.token();
-    const professional = this.bookingState.selectedProfessional();
-
-    if (!token || !professional) {
-      this.errorMessage = 'Sessão de agendamento inválida. Recarregue o link.';
-      return;
-    }
-
-    this.reserving = true;
-    this.errorMessage = null;
-
-    const reserveRequest: ReserveAppointmentRequest = {
-      token,
-      professionalId: professional.id,
-      professionalName: professional.name,
-      professionalEmail: professional.email,
-      date: this.selectedDay.date,
-      time: this.selectedTime,
-      businessHours: professional.businessHours,
-    };
-
-    console.log('📤 Reserve Request:', reserveRequest);
-
-    this.appointmentsApi.reserve(reserveRequest).subscribe({
-      next: (response) => {
-        this.reserving = false;
-
-        if (!response.success || !response.data) {
-          this.errorMessage =
-            response.message ??
-            'Não foi possível reservar este horário. Escolha outro.';
-          return;
-        }
-
-        this.bookingState.setTimeSlot({
-          date: this.selectedDay!.date,
-          time: this.selectedTime!
-        });
-
-        this.bookingState.setAppointmentId(response.data.id);
-        this.next.emit();
-      },
-
-      error: (err) => {
-        console.error('❌ Erro ao reservar:', err);
-        console.error('❌ Resposta do backend:', err?.error);
-
-        this.reserving = false;
-
-        this.errorMessage =
-          err?.error?.message ??
-          'Este horário não está mais disponível. Escolha outro.';
-
-        this.ngOnInit();
-      },
-    });
+    this.bookingState.setTimeSlot({ date: this.selectedDay.date, time: this.selectedTime });
+    this.next.emit();
   }
 
   formatDayLabel(isoDate: string): string {
