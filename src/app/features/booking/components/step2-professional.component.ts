@@ -68,13 +68,28 @@ export class Step2ProfessionalComponent implements OnInit {
       next: (response) => {
         this.loading = false;
         this.professionals = response.data ?? [];
+
+        console.log('📋 Profissionais recebidos:', this.professionals);
+
+        this.professionals.forEach((professional) => {
+          console.log(
+            `👤 Profissional: ${professional.name}`,
+            'businessHours:',
+            professional.businessHours
+          );
+        });
+
         if (this.professionals.length === 0) {
           this.errorMessage = 'Nenhum profissional disponível no momento.';
         }
       },
-      error: () => {
+
+      error: (error) => {
+        console.error('❌ Erro ao buscar profissionais:', error);
+
         this.loading = false;
-        this.errorMessage = 'Não foi possível carregar os profissionais agora. Tente novamente em instantes.';
+        this.errorMessage =
+          'Não foi possível carregar os profissionais agora. Tente novamente em instantes.';
       },
     });
   }

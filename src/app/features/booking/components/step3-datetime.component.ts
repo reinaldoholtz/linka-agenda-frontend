@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { BookingStateService } from '../services/booking-state.service';
 import { AvailabilityApiService, AvailableDay } from '../services/availability-api.service';
-import { AppointmentsApiService } from '../services/appointments-api.service';
+import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/appointments-api.service';
 
 /**
  * Tela 3 — Data e horário. Layout mobile-first: dias em linha horizontal,
@@ -94,12 +94,13 @@ export class Step3DatetimeComponent implements OnInit {
 
   ngOnInit(): void {
     const professional = this.bookingState.selectedProfessional();
-    if (!professional) {
+    const token = this.bookingState.token();
+    if (!professional || !token) {
       this.back.emit();
       return;
     }
 
-    this.availabilityApi.getAvailability(professional.id).subscribe({
+    this.availabilityApi.getAvailability(token, professional.email, professional.businessHours).subscribe({
       next: (response) => {
         this.loading = false;
         this.days = response.data ?? [];
@@ -145,29 +146,48 @@ export class Step3DatetimeComponent implements OnInit {
     this.reserving = true;
     this.errorMessage = null;
 
-    this.appointmentsApi.reserve({
+    const reserveRequest: ReserveAppointmentRequest = {
       token,
       professionalId: professional.id,
       professionalName: professional.name,
+      professionalEmail: professional.email,
       date: this.selectedDay.date,
       time: this.selectedTime,
-    }).subscribe({
+      businessHours: professional.businessHours,
+    };
+
+    console.log('📤 Reserve Request:', reserveRequest);
+
+    this.appointmentsApi.reserve(reserveRequest).subscribe({
       next: (response) => {
         this.reserving = false;
 
         if (!response.success || !response.data) {
-          this.errorMessage = response.message ?? 'Não foi possível reservar este horário. Escolha outro.';
+          this.errorMessage =
+            response.message ??
+            'Não foi possível reservar este horário. Escolha outro.';
           return;
         }
 
-        this.bookingState.setTimeSlot({ date: this.selectedDay!.date, time: this.selectedTime! });
+        this.bookingState.setTimeSlot({
+          date: this.selectedDay!.date,
+          time: this.selectedTime!
+        });
+
         this.bookingState.setAppointmentId(response.data.id);
         this.next.emit();
       },
+
       error: (err) => {
+        console.error('❌ Erro ao reservar:', err);
+        console.error('❌ Resposta do backend:', err?.error);
+
         this.reserving = false;
-        this.errorMessage = err?.error?.message ?? 'Este horário não está mais disponível. Escolha outro.';
-        // Recarrega a disponibilidade para refletir o horário que acabou de ser ocupado.
+
+        this.errorMessage =
+          err?.error?.message ??
+          'Este horário não está mais disponível. Escolha outro.';
+
         this.ngOnInit();
       },
     });

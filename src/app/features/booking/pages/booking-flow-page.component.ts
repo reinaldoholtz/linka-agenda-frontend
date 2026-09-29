@@ -71,7 +71,11 @@ export class BookingFlowPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log('🚀 BookingFlowPageComponent iniciado');
+
     const token = this.route.snapshot.paramMap.get('token');
+
+    console.log('🔑 Token capturado:', token);
 
     if (!token) {
       this.router.navigateByUrl('/link-expirado');
@@ -89,6 +93,9 @@ export class BookingFlowPageComponent implements OnInit {
         this.bookingState.setValidatedCustomer(
           response.data.name ?? '',
           response.data.phoneNumber ?? '',
+        );
+        this.bookingState.setServiceDescription(
+          response.data.description ?? ''
         );
         this.state = 'ready';
       },

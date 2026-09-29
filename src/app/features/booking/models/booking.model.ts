@@ -6,6 +6,14 @@ export interface BookingService {
 export interface Professional {
   id: number;
   name: string;
+  email: string;
+  businessHours: BusinessHour[];
+}
+
+export interface BusinessHour {
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
 }
 
 export interface AvailableTimeSlot {

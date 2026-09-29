@@ -24,5 +24,5 @@ import { Component, Input } from '@angular/core';
 })
 export class ProgressIndicatorComponent {
   @Input() currentStep = 1;
-  readonly steps = ['Serviço', 'Profissional', 'Data e horário', 'Pagamento', 'Confirmação'];
+  readonly steps = ['Serviço', 'Profissional', 'Data', 'Pagamento', 'Confirmação'];
 }

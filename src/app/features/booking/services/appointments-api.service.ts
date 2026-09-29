@@ -3,13 +3,16 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
+import { BusinessHour } from '../models/booking.model';
 
 export interface ReserveAppointmentRequest {
   token: string;
   professionalId: number;
   professionalName: string;
+  professionalEmail: string;
   date: string; // yyyy-MM-dd
   time: string; // HH:mm
+  businessHours: BusinessHour[];
 }
 
 export interface AppointmentResult {
