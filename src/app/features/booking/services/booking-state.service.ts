@@ -17,6 +17,7 @@ export class BookingStateService {
   readonly token = signal<string | null>(null);
   readonly customerName = signal<string | null>(null);
   readonly customerPhone = signal<string | null>(null);
+  readonly serviceDescription = signal<string | null>(null);
 
   readonly selectedService = signal<BookingService | null>(null);
   readonly selectedProfessional = signal<Professional | null>(null);
@@ -31,6 +32,10 @@ export class BookingStateService {
   setValidatedCustomer(name: string, phone: string): void {
     this.customerName.set(name);
     this.customerPhone.set(phone);
+  }
+
+  setServiceDescription(description: string): void {
+    this.serviceDescription.set(description);
   }
 
   setService(service: BookingService): void {
@@ -49,6 +54,10 @@ export class BookingStateService {
     this.appointmentId.set(appointmentId);
   }
 
+  clearAppointmentId(): void {
+    this.appointmentId.set(null);
+  }
+
   setPayment(payment: PaymentDetails): void {
     this.payment.set(payment);
   }
@@ -59,5 +68,6 @@ export class BookingStateService {
     this.selectedTimeSlot.set(null);
     this.appointmentId.set(null);
     this.payment.set(null);
+    this.serviceDescription.set(null);
   }
 }

@@ -6,6 +6,14 @@ export interface BookingService {
 export interface Professional {
   id: number;
   name: string;
+  email: string;
+  businessHours: BusinessHour[];
+}
+
+export interface BusinessHour {
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
 }
 
 export interface AvailableTimeSlot {
@@ -17,7 +25,19 @@ export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
 
 export interface PaymentDetails {
   name: string;
-  document: string; // CPF/CNPJ
   email: string;
   method: PaymentMethod;
+}
+
+export interface AvailablePaymentMethodsResponse {
+  paymentMethods: string[];
+}
+
+export interface PaymentConfirmation {
+  paid: boolean;
+  paymentStatus: string;
+  service: string;
+  professional: string;
+  date: string;
+  time: string;
 }

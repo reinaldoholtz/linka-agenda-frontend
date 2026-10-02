@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
+import { BusinessHour } from '../models/booking.model';
 
 export interface AvailableDay {
   date: string;
@@ -10,7 +11,7 @@ export interface AvailableDay {
 }
 
 /**
- * Consome GET /api/professionals/{id}/availability. O backend é responsável
+ * Consome POST /api/professionals/{id}/availability. O backend é responsável
  * por consultar o Google Calendar e cruzar com os horários de trabalho do
  * profissional (regra 33.1/33.2 — Angular não fala com o Google Calendar).
  * Endpoint da fase 2 do backend.
@@ -20,9 +21,16 @@ export class AvailabilityApiService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getAvailability(professionalId: number): Observable<ApiResponse<AvailableDay[]>> {
-    return this.http.get<ApiResponse<AvailableDay[]>>(
-      `${environment.apiBaseUrl}/professionals/${professionalId}/availability`
+  getAvailability(token: string, professionalEmail: string,businessHours: BusinessHour[]
+  ): Observable<ApiResponse<AvailableDay[]>> {
+
+    console.log('📧 Professional Email:', professionalEmail);
+    console.log('🔑 Booking Token:', token);
+    console.log('🕐 Business Hours:', businessHours);
+
+    return this.http.post<ApiResponse<AvailableDay[]>>(
+      `${environment.apiBaseUrl}/professionals/${professionalEmail}/availability`,
+      {  token, businessHours }
     );
   }
 }
