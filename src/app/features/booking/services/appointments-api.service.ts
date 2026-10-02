@@ -10,6 +10,8 @@ export interface ReserveAppointmentRequest {
   professionalId: number;
   professionalName: string;
   professionalEmail: string;
+  customerName: string;
+  customerEmail: string;
   date: string; // yyyy-MM-dd
   time: string; // HH:mm
   businessHours: BusinessHour[];

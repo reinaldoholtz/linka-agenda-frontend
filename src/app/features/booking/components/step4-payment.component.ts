@@ -25,7 +25,7 @@ import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/a
         <dt class="text-slate-500">Horário</dt><dd class="text-right font-medium">{{ bookingState.selectedTimeSlot()?.time }}</dd>
       </dl>
 
-      @if (reservingAppointment || loadingPaymentMethods) {
+      @if (reservingAppointment || (loadingPaymentMethods && bookingState.appointmentId())) {
         <p class="rounded-xl bg-slate-50 px-4 py-4 text-center text-sm text-slate-500">
           {{ reservingAppointment ? 'Reservando horário...' : 'Carregando formas de pagamento...' }}
         </p>
@@ -42,19 +42,19 @@ import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/a
                 </button>
               }
             </div>
-            @if (availablePaymentMethods.length === 0 && !errorMessage) {
+            @if (bookingState.appointmentId() && availablePaymentMethods.length === 0 && !errorMessage) {
               <p class="mt-2 text-sm text-red-600">Nenhuma forma de pagamento está disponível.</p>
             }
           </div>
 
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Nome completo</label>
-            <input formControlName="name" type="text" autocomplete="name" placeholder="Digite seu nome completo"
+            <input formControlName="name" type="text" autocomplete="name" placeholder="Digite seu nome completo" [readonly]="!!bookingState.appointmentId()"
               class="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm" />
           </div>
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">E-mail</label>
-            <input formControlName="email" type="email" autocomplete="email" placeholder="seu@email.com"
+            <input formControlName="email" type="email" autocomplete="email" placeholder="seu@email.com" [readonly]="!!bookingState.appointmentId()"
               class="w-full rounded-lg border border-slate-200 px-3 py-3 text-sm" />
           </div>
           @if (errorMessage) {
@@ -63,9 +63,9 @@ import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/a
           <div class="flex gap-3 pt-2">
             <button type="button" (click)="goBack()" [disabled]="cancellingReservation || submitting"
               class="flex-1 rounded-xl border border-slate-200 py-3 font-medium text-slate-600">Voltar</button>
-            <button type="submit" [disabled]="form.invalid || submitting || availablePaymentMethods.length === 0"
+            <button type="submit" [disabled]="form.invalid || reservingAppointment || loadingPaymentMethods || submitting || (bookingState.appointmentId() && availablePaymentMethods.length === 0)"
               class="flex-1 rounded-xl bg-brand-600 py-3 font-medium text-white disabled:opacity-40">
-              {{ submitting ? 'Processando…' : 'Continuar' }}
+              {{ reservingAppointment ? 'Reservando…' : (submitting ? 'Processando…' : (bookingState.appointmentId() ? 'Continuar' : 'Reservar horário')) }}
             </button>
           </div>
         </form>
@@ -80,7 +80,7 @@ export class Step4PaymentComponent implements OnInit {
   submitting = false;
   reservingAppointment = false;
   cancellingReservation = false;
-  loadingPaymentMethods = true;
+  loadingPaymentMethods = false;
   errorMessage: string | null = null;
   availablePaymentMethods: PaymentMethod[] = [];
   readonly form: ReturnType<FormBuilder['group']>;
@@ -100,10 +100,18 @@ export class Step4PaymentComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.reserveSelectedSlot();
+    this.validateSelectedSlot();
+  }
+
+  private validateSelectedSlot(): void {
+    if (!this.bookingState.token() || !this.bookingState.selectedProfessional() || !this.bookingState.selectedTimeSlot()) {
+      this.loadingPaymentMethods = false;
+      this.errorMessage = 'Sessão de agendamento inválida. Recarregue o link.';
+    }
   }
 
   private reserveSelectedSlot(): void {
+    const { name: customerName, email: customerEmail } = this.form.getRawValue();
     const token = this.bookingState.token();
     const professional = this.bookingState.selectedProfessional();
     const slot = this.bookingState.selectedTimeSlot();
@@ -119,6 +127,8 @@ export class Step4PaymentComponent implements OnInit {
       professionalId: professional.id,
       professionalName: professional.name,
       professionalEmail: professional.email,
+      customerName,
+      customerEmail,
       date: slot.date,
       time: slot.time,
       businessHours: professional.businessHours,
@@ -132,7 +142,7 @@ export class Step4PaymentComponent implements OnInit {
           return;
         }
         this.bookingState.setAppointmentId(response.data.id);
-        this.loadAvailablePaymentMethods(response.data.id);
+        this.loadAvailablePaymentMethods(response.data.id, true);
       },
       error: (err) => {
         this.reservingAppointment = false;
@@ -142,7 +152,7 @@ export class Step4PaymentComponent implements OnInit {
     });
   }
 
-  private loadAvailablePaymentMethods(appointmentId: string): void {
+  private loadAvailablePaymentMethods(appointmentId: string, createPaymentAfterLoad = false): void {
     this.loadingPaymentMethods = true;
     this.paymentsApi.getAvailablePaymentMethods(appointmentId).subscribe({
       next: (response) => {
@@ -150,6 +160,9 @@ export class Step4PaymentComponent implements OnInit {
         this.availablePaymentMethods = response.paymentMethods as PaymentMethod[];
         if (this.availablePaymentMethods.length > 0) {
           this.form.patchValue({ method: this.availablePaymentMethods[0] });
+          if (createPaymentAfterLoad) {
+            this.submit();
+          }
         }
       },
       error: (err) => {
@@ -194,8 +207,18 @@ export class Step4PaymentComponent implements OnInit {
     const token = this.bookingState.token();
     const appointmentId = this.bookingState.appointmentId();
     const { method, name, email } = this.form.getRawValue();
-    if (!token || !appointmentId || !method || !this.availablePaymentMethods.includes(method)) {
+    if (!token) {
       this.errorMessage = 'Sessão de agendamento inválida. Recarregue o link.';
+      return;
+    }
+
+    if (!appointmentId) {
+      this.reserveSelectedSlot();
+      return;
+    }
+
+    if (!method || !this.availablePaymentMethods.includes(method)) {
+      this.errorMessage = 'Selecione uma forma de pagamento.';
       return;
     }
 
