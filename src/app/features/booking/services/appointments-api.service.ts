@@ -3,13 +3,18 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
+import { BusinessHour } from '../models/booking.model';
 
 export interface ReserveAppointmentRequest {
   token: string;
   professionalId: number;
   professionalName: string;
+  professionalEmail: string;
+  customerName: string;
+  customerEmail: string;
   date: string; // yyyy-MM-dd
   time: string; // HH:mm
+  businessHours: BusinessHour[];
 }
 
 export interface AppointmentResult {
@@ -22,6 +27,10 @@ export interface AppointmentResult {
   endTime: string;
   status: string;
   reservationExpiresAt: string | null;
+}
+
+export interface CancelReservationRequest {
+  token: string;
 }
 
 /**
@@ -38,6 +47,13 @@ export class AppointmentsApiService {
     return this.http.post<ApiResponse<AppointmentResult>>(
       `${environment.apiBaseUrl}/appointments/reserve`,
       request
+    );
+  }
+
+  cancelReservation(appointmentId: string, request: CancelReservationRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(
+      `${environment.apiBaseUrl}/appointments/${appointmentId}/cancel-reservation`,
+      request,
     );
   }
 }

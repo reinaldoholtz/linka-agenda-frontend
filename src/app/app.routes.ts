@@ -18,6 +18,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/confirmation/confirmation.component').then((m) => m.ConfirmationComponent),
   },
+  {
+  path: 'pagamento/cancelado',
+    loadComponent: () =>
+      import('./pages/cancelled/payment-cancelled.component').then(
+        (m) => m.PaymentCancelledComponent,
+      ),
+  },
   { path: '', redirectTo: 'link-expirado', pathMatch: 'full' },
   { path: '**', redirectTo: 'link-expirado' },
 ];
