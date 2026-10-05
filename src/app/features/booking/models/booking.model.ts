@@ -40,4 +40,5 @@ export interface PaymentConfirmation {
   professional: string;
   date: string;
   time: string;
+  phoneNumberChannel: string;
 }
