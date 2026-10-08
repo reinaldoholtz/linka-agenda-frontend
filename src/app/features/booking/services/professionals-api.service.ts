@@ -20,9 +20,9 @@ export class ProfessionalsApiService {
 
   constructor(private readonly http: HttpClient) {}
 
-  listForService(serviceId: string): Observable<ApiResponse<Professional[]>> {
+  listForService(serviceId: string, token: string): Observable<ApiResponse<Professional[]>> {
     return this.http.get<ApiResponse<Professional[]>>(this.baseUrl, {
-      params: { serviceId },
+      params: { serviceId, token },
     });
   }
 }
