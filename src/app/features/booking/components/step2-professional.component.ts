@@ -64,7 +64,13 @@ export class Step2ProfessionalComponent implements OnInit {
       return;
     }
 
-    this.professionalsApi.listForService(service.id).subscribe({
+    const token = this.bookingState.token();
+    if (!token) {
+      this.back.emit();
+      return;
+    }
+
+    this.professionalsApi.listForService(service.id, token).subscribe({
       next: (response) => {
         this.loading = false;
         this.professionals = response.data ?? [];
