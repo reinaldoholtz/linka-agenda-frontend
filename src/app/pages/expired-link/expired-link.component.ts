@@ -14,7 +14,7 @@ import { PageCardComponent } from '../../shared/components/page-card.component';
         <h1 class="text-lg font-semibold text-slate-900">Link inválido ou expirado</h1>
         <p class="text-sm text-slate-500">
           Este link de agendamento não está mais disponível.
-          Digite <strong>sair</strong> para encerrar o atendimento atual e, em seguida, envie uma nova mensagem para iniciar novamente.
+          Para continuar, inicie um novo atendimento e solicite um novo link.
         </p>
       </div>
     </app-page-card>
