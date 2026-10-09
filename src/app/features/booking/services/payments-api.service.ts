@@ -44,6 +44,12 @@ export class PaymentsApiService {
     );
   }
 
+  getAvailablePaymentMethodsByToken(token: string): Observable<AvailablePaymentMethodsResponse> {
+    return this.http.get<AvailablePaymentMethodsResponse>(
+      `${environment.apiBaseUrl}/payments/methods/token/${encodeURIComponent(token)}`
+    );
+  }
+
   confirmStripePayment(  sessionId: string): Observable<ApiResponse<PaymentConfirmation>> {
       return this.http.get<ApiResponse<PaymentConfirmation>>(
         `${environment.apiBaseUrl}/payments/stripe/confirm/${sessionId}`
