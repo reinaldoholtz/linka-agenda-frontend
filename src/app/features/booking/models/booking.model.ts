@@ -19,6 +19,9 @@ export interface BusinessHour {
 export interface AvailableTimeSlot {
   date: string; // formato ISO (yyyy-MM-dd)
   time: string; // formato HH:mm
+  startInstant: string;
+  localDate: string;
+  localTime: string;
 }
 
 export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
@@ -41,4 +44,5 @@ export interface PaymentConfirmation {
   date: string;
   time: string;
   phoneNumberChannel: string;
+  startInstant: string;
 }

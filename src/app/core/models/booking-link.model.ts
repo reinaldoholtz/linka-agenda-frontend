@@ -4,4 +4,5 @@ export interface ValidateBookingLinkResult {
   phoneNumber: string | null;
   description: string | null;
   expiresAt: string | null;
+  timeZone: string | null;
 }
