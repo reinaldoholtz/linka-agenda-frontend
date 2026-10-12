@@ -12,6 +12,7 @@ interface PaymentConfirmation {
   date: string;
   time: string;
   phoneNumberChannel: string;
+  startInstant: string;
 }
 
 @Component({
@@ -122,13 +123,13 @@ interface PaymentConfirmation {
               Data
             </dt>
             <dd class="text-right font-medium">
-              {{ formatDate(confirmation.date) }}
+              {{ formatDate(confirmation.startInstant ? localDate(confirmation.startInstant) : confirmation.date) }}
             </dd>
             <dt class="text-slate-500">
               Horário
             </dt>
             <dd class="text-right font-medium">
-              {{ formatTime(confirmation.time) }}
+              {{ confirmation.startInstant ? localTime(confirmation.startInstant) : formatTime(confirmation.time) }}
             </dd>
           </dl>
         </div>
@@ -237,6 +238,22 @@ export class ConfirmationComponent implements OnInit {
     }
 
     return time.substring(0, 5);
+  }
+
+  localDate(instant: string): string {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date(instant));
+    const part = (type: string) => parts.find(item => item.type === type)!.value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  }
+
+  localTime(instant: string): string {
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).format(new Date(instant));
   }
 
   get whatsAppUrl(): string {

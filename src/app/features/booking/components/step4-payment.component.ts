@@ -21,8 +21,8 @@ import { AppointmentsApiService, ReserveAppointmentRequest } from '../services/a
       <dl class="grid grid-cols-2 gap-y-2 rounded-xl bg-slate-50 p-4 text-sm">
         <dt class="text-slate-500">Serviço</dt><dd class="text-right font-medium">{{ bookingState.selectedService()?.name }}</dd>
         <dt class="text-slate-500">Profissional</dt><dd class="text-right font-medium">{{ bookingState.selectedProfessional()?.name }}</dd>
-        <dt class="text-slate-500">Data</dt><dd class="text-right font-medium">{{ formatDate(bookingState.selectedTimeSlot()?.date) }}</dd>
-        <dt class="text-slate-500">Horário</dt><dd class="text-right font-medium">{{ bookingState.selectedTimeSlot()?.time }}</dd>
+        <dt class="text-slate-500">Data</dt><dd class="text-right font-medium">{{ formatDate(bookingState.selectedTimeSlot()?.localDate) }}</dd>
+        <dt class="text-slate-500">Horário</dt><dd class="text-right font-medium">{{ bookingState.selectedTimeSlot()?.localTime }}</dd>
       </dl>
 
       @if (reservingAppointment || loadingPaymentMethods) {
@@ -133,6 +133,8 @@ export class Step4PaymentComponent implements OnInit {
       customerEmail,
       date: slot.date,
       time: slot.time,
+      startInstant: slot.startInstant,
+      clientTimeZone: this.bookingState.clientTimeZone,
       businessHours: professional.businessHours,
     };
     this.appointmentsApi.reserve(request).subscribe({

@@ -8,6 +8,7 @@ import { BusinessHour } from '../models/booking.model';
 export interface AvailableDay {
   date: string;
   slots: string[];
+  slotDetails: { date: string; time: string; startInstant: string }[];
 }
 
 /**
