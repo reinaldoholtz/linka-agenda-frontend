@@ -2,6 +2,18 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { BookingStateService } from '../services/booking-state.service';
 import { AvailabilityApiService, AvailableDay } from '../services/availability-api.service';
 
+interface ClientSlot {
+  date: string;
+  time: string;
+  startInstant: string;
+  localTime: string;
+}
+
+interface ClientDay {
+  date: string;
+  slots: ClientSlot[];
+}
+
 @Component({
   selector: 'app-step3-datetime',
   standalone: true,
@@ -32,11 +44,11 @@ import { AvailabilityApiService, AvailableDay } from '../services/availability-a
 
         @if (selectedDay) {
           <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            @for (time of selectedDay.slots; track time) {
-              <button type="button" (click)="selectTime(time)" class="rounded-lg border px-2 py-3 text-center text-sm font-medium"
-                [class.border-brand-500]="selectedTime === time" [class.bg-brand-600]="selectedTime === time"
-                [class.text-white]="selectedTime === time" [class.border-slate-200]="selectedTime !== time">
-                {{ time }}
+            @for (slot of selectedDay.slots; track slot.startInstant) {
+              <button type="button" (click)="selectTime(slot)" class="rounded-lg border px-2 py-3 text-center text-sm font-medium"
+                [class.border-brand-500]="selectedTime?.startInstant === slot.startInstant" [class.bg-brand-600]="selectedTime?.startInstant === slot.startInstant"
+                [class.text-white]="selectedTime?.startInstant === slot.startInstant" [class.border-slate-200]="selectedTime?.startInstant !== slot.startInstant">
+                {{ slot.localTime }}
               </button>
             }
           </div>
@@ -57,9 +69,9 @@ export class Step3DatetimeComponent implements OnInit {
 
   loading = true;
   errorMessage: string | null = null;
-  days: AvailableDay[] = [];
-  selectedDay: AvailableDay | null = null;
-  selectedTime: string | null = null;
+  days: ClientDay[] = [];
+  selectedDay: ClientDay | null = null;
+  selectedTime: ClientSlot | null = null;
 
   constructor(
     private readonly bookingState: BookingStateService,
@@ -77,17 +89,18 @@ export class Step3DatetimeComponent implements OnInit {
     this.availabilityApi.getAvailability(token, professional.email, professional.businessHours).subscribe({
       next: (response) => {
         this.loading = false;
-        this.days = response.data ?? [];
+        this.days = this.toClientDays(response.data ?? []);
         if (this.days.length === 0) {
           this.errorMessage = 'Nenhum horário disponível encontrado.';
           return;
         }
 
         const savedSlot = this.bookingState.selectedTimeSlot();
-        const savedDay = savedSlot ? this.days.find((day) => day.date === savedSlot.date) : undefined;
-        if (savedDay?.slots.includes(savedSlot!.time)) {
+        const savedDay = savedSlot ? this.days.find((day) => day.date === savedSlot.localDate) : undefined;
+        const savedClientSlot = savedDay?.slots.find(slot => slot.startInstant === savedSlot?.startInstant);
+        if (savedDay && savedClientSlot) {
           this.selectedDay = savedDay;
-          this.selectedTime = savedSlot!.time;
+          this.selectedTime = savedClientSlot;
           return;
         }
 
@@ -101,13 +114,13 @@ export class Step3DatetimeComponent implements OnInit {
     });
   }
 
-  selectDay(day: AvailableDay): void {
+  selectDay(day: ClientDay): void {
     this.selectedDay = day;
     this.selectedTime = null;
   }
 
-  selectTime(time: string): void {
-    this.selectedTime = time;
+  selectTime(slot: ClientSlot): void {
+    this.selectedTime = slot;
   }
 
   confirmSelection(): void {
@@ -115,12 +128,41 @@ export class Step3DatetimeComponent implements OnInit {
       return;
     }
 
-    this.bookingState.setTimeSlot({ date: this.selectedDay.date, time: this.selectedTime });
+    this.bookingState.setTimeSlot({
+      date: this.selectedTime.date,
+      time: this.selectedTime.time,
+      startInstant: this.selectedTime.startInstant,
+      localDate: this.selectedDay.date,
+      localTime: this.selectedTime.localTime,
+    });
     this.next.emit();
   }
 
   formatDayLabel(isoDate: string): string {
-    const date = new Date(`${isoDate}T00:00:00`);
-    return date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
+    const date = new Date(`${isoDate}T12:00:00Z`);
+    return date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', timeZone: 'UTC' });
+  }
+
+  private toClientDays(availableDays: AvailableDay[]): ClientDay[] {
+    const byDate = new Map<string, ClientSlot[]>();
+    for (const day of availableDays) {
+      for (const slot of day.slotDetails ?? []) {
+        const instant = new Date(slot.startInstant);
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: this.bookingState.clientTimeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+        }).formatToParts(instant);
+        const part = (type: string) => parts.find(item => item.type === type)!.value;
+        const localDate = `${part('year')}-${part('month')}-${part('day')}`;
+        const localTime = `${part('hour')}:${part('minute')}`;
+        const slots = byDate.get(localDate) ?? [];
+        slots.push({ ...slot, localTime });
+        byDate.set(localDate, slots);
+      }
+    }
+    return Array.from(byDate, ([date, slots]) => ({
+      date, slots: slots.sort((a, b) => a.startInstant.localeCompare(b.startInstant)),
+    }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 }

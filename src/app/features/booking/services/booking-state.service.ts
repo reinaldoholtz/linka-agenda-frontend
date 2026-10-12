@@ -14,6 +14,8 @@ import {
 @Injectable({ providedIn: 'root' })
 export class BookingStateService {
 
+  readonly clientTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
   readonly token = signal<string | null>(null);
   readonly customerName = signal<string | null>(null);
   readonly customerPhone = signal<string | null>(null);

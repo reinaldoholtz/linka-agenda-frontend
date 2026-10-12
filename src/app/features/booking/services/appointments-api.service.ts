@@ -14,6 +14,8 @@ export interface ReserveAppointmentRequest {
   customerEmail: string;
   date: string; // yyyy-MM-dd
   time: string; // HH:mm
+  startInstant: string;
+  clientTimeZone: string;
   businessHours: BusinessHour[];
 }
 
@@ -27,6 +29,9 @@ export interface AppointmentResult {
   endTime: string;
   status: string;
   reservationExpiresAt: string | null;
+  startInstant: string | null;
+  endInstant: string | null;
+  clientTimeZone: string | null;
 }
 
 export interface CancelReservationRequest {
