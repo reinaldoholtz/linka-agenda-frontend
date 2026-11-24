@@ -1,0 +1,194 @@
+<div class="min-h-screen bg-slate-100 text-slate-900">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[.18em] text-sky-700">Linka Agenda / Administração</p>
+        <h1 class="mt-1 text-2xl font-bold">{{ tenant?.tenantName || 'Catálogo do tenant' }}</h1>
+        <p class="text-sm text-slate-500">Tenant ID: {{ tenantId }}</p>
+      </div>
+      <div class="flex gap-2">
+        <a routerLink="/admin/tenants" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Tenants</a>
+        <button type="button" (click)="logout()" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-8">
+    @if (error) { <p role="alert" class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">{{ error }}</p> }
+    @if (notice) { <p role="status" class="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">{{ notice }}</p> }
+    @if (loading) { <p role="status" class="rounded-2xl bg-white p-8 text-center text-slate-600 shadow-sm">Carregando configurações...</p> }
+    @else {
+      <nav aria-label="Seções administrativas" class="mb-7 flex gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-sm">
+        <button type="button" (click)="selectTab('services')" [attr.aria-current]="tab === 'services' ? 'page' : null"
+          class="whitespace-nowrap rounded-xl px-5 py-3 text-sm font-semibold" [class.bg-sky-700]="tab === 'services'" [class.text-white]="tab === 'services'">Serviços</button>
+        <button type="button" (click)="selectTab('professionals')" [attr.aria-current]="tab === 'professionals' ? 'page' : null"
+          class="whitespace-nowrap rounded-xl px-5 py-3 text-sm font-semibold" [class.bg-sky-700]="tab === 'professionals'" [class.text-white]="tab === 'professionals'">Profissionais</button>
+        <button type="button" (click)="selectTab('agent')" [attr.aria-current]="tab === 'agent' ? 'page' : null"
+          class="whitespace-nowrap rounded-xl px-5 py-3 text-sm font-semibold" [class.bg-sky-700]="tab === 'agent'" [class.text-white]="tab === 'agent'">Agente de IA</button>
+      </nav>
+
+      @if (tab === 'services') {
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div><h2 class="text-xl font-bold">Serviços</h2><p class="text-sm text-slate-600">Catálogo, preço e profissionais disponíveis.</p></div>
+          <button type="button" (click)="newService()" class="rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white hover:bg-sky-800">Novo serviço</button>
+        </div>
+        @if (serviceFormVisible) {
+          <form #serviceForm="ngForm" (ngSubmit)="saveService(serviceForm)" class="mb-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+            <div class="mb-5 flex items-start justify-between gap-3"><h3 class="text-lg font-bold">{{ editingServiceId ? 'Editar serviço' : 'Novo serviço' }}</h3><button type="button" (click)="serviceFormVisible = false" class="text-sm text-slate-600">Fechar</button></div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="block text-sm font-semibold">Nome *<input name="serviceName" [(ngModel)]="serviceDraft.name" required maxlength="150" class="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label>
+              <label class="block text-sm font-semibold">Modalidade
+                <select name="locationType" [(ngModel)]="serviceDraft.locationType" class="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3">
+                  <option value="">Sem modalidade</option><option value="ONLINE">Online</option><option value="PRESENCIAL">Presencial</option><option value="HIBRIDO">Híbrido</option>
+                </select>
+              </label>
+              <label class="block text-sm font-semibold sm:col-span-2">Descrição<textarea name="description" [(ngModel)]="serviceDraft.description" rows="3" class="mt-2 w-full rounded-xl border border-slate-300 p-3"></textarea></label>
+            </div>
+            <div class="mt-5 flex flex-wrap gap-5 text-sm font-semibold">
+              <label class="flex items-center gap-2"><input name="requiresAppointment" type="checkbox" [(ngModel)]="serviceDraft.requiresAppointment" (change)="appointmentRequirementChanged()" class="h-5 w-5 accent-sky-700" /> Requer agendamento</label>
+              <label class="flex items-center gap-2"><input name="requiresPayment" type="checkbox" [(ngModel)]="serviceDraft.requiresPayment" (change)="paymentRequirementChanged()" [disabled]="!serviceDraft.requiresAppointment" class="h-5 w-5 accent-sky-700" /> Requer pagamento</label>
+              <label class="flex items-center gap-2"><input name="serviceActive" type="checkbox" [(ngModel)]="serviceDraft.active" class="h-5 w-5 accent-sky-700" /> Ativo</label>
+            </div>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+              @if (serviceDraft.requiresAppointment) {
+                <label class="block text-sm font-semibold">Duração (minutos) *<input name="durationMinutes" type="number" [(ngModel)]="serviceDraft.durationMinutes" required min="1" class="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label>
+              }
+              @if (serviceDraft.requiresPayment) {
+                <label class="block text-sm font-semibold">Preço (€) *<input name="price" type="number" [(ngModel)]="serviceDraft.price" required min="0.01" step="0.01" class="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label>
+              }
+            </div>
+            @if (serviceDraft.requiresAppointment) {
+              <fieldset class="mt-6 border-t pt-5"><legend class="text-sm font-bold">Profissionais associados</legend>
+                <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  @for (professional of professionals; track professional.id) {
+                    <label class="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm"><input type="checkbox" [checked]="serviceDraft.professionalIds.includes(professional.id)" (change)="toggleId(serviceDraft.professionalIds, professional.id, $any($event.target).checked)" class="h-4 w-4 accent-sky-700" />{{ professional.name }}</label>
+                  } @empty { <p class="text-sm text-slate-500">Cadastre profissionais para associá-los.</p> }
+                </div>
+              </fieldset>
+            }
+            <div class="mt-7 flex flex-wrap justify-end gap-3"><button type="button" (click)="serviceFormVisible = false" class="rounded-xl border px-5 py-3">Cancelar</button><button type="submit" [disabled]="busy" class="rounded-xl bg-sky-700 px-6 py-3 font-semibold text-white disabled:opacity-50">{{ busy ? 'Salvando...' : 'Salvar serviço' }}</button></div>
+          </form>
+        }
+        <div class="grid gap-4 md:grid-cols-2">
+          @for (service of services; track service.id) {
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div class="flex items-start justify-between gap-3"><div><h3 class="text-lg font-bold">{{ service.name }}</h3><p class="mt-1 text-sm text-slate-500">{{ service.description || 'Sem descrição' }}</p></div><span class="rounded-full px-3 py-1 text-xs font-bold" [class.bg-emerald-100]="service.active" [class.text-emerald-800]="service.active" [class.bg-slate-200]="!service.active">{{ service.active ? 'Ativo' : 'Inativo' }}</span></div>
+              <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-700"><span class="rounded-lg bg-slate-100 px-3 py-2">{{ service.requiresAppointment ? (service.durationMinutes + ' min') : 'Sem agendamento' }}</span><span class="rounded-lg bg-slate-100 px-3 py-2">{{ service.requiresPayment ? (service.price | currency:'EUR') : 'Gratuito' }}</span><span class="rounded-lg bg-slate-100 px-3 py-2">{{ service.locationType || 'Sem modalidade' }}</span></div>
+              <p class="mt-4 text-sm text-slate-600">{{ service.professionalIds.length }} profissional(is) associado(s)</p>
+              <div class="mt-5 flex flex-wrap gap-4 border-t pt-4 text-sm font-semibold"><button type="button" (click)="editService(service)" class="text-sky-700">Editar</button><button type="button" [disabled]="busy" (click)="toggleServiceActive(service)" class="text-sky-700">{{ service.active ? 'Desativar' : 'Ativar' }}</button><button type="button" [disabled]="busy" (click)="deleteService(service)" class="text-red-700">Excluir</button></div>
+            </article>
+          } @empty { <p class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-slate-500 md:col-span-2">Nenhum serviço cadastrado.</p> }
+        </div>
+      }
+
+      @if (tab === 'professionals') {
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-xl font-bold">Profissionais</h2><p class="text-sm text-slate-600">Serviços atendidos e horários semanais.</p></div><button type="button" (click)="newProfessional()" class="rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white hover:bg-sky-800">Novo profissional</button></div>
+        @if (professionalFormVisible) {
+          <form #professionalForm="ngForm" (ngSubmit)="saveProfessional(professionalForm)" class="mb-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+            <div class="mb-5 flex items-start justify-between gap-3"><h3 class="text-lg font-bold">{{ editingProfessionalId ? 'Editar profissional' : 'Novo profissional' }}</h3><button type="button" (click)="professionalFormVisible = false" class="text-sm text-slate-600">Fechar</button></div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="block text-sm font-semibold">Nome *<input name="professionalName" [(ngModel)]="professionalDraft.name" required maxlength="150" class="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label>
+              @if (tenant?.googleAuthMode !== 'OAUTH_LINKA') {
+                <label class="block text-sm font-semibold">E-mail *<input name="professionalEmail" type="email" [(ngModel)]="professionalDraft.email" required email maxlength="150" class="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label>
+              }
+            </div>
+            <label class="mt-5 flex items-center gap-2 text-sm font-semibold"><input name="professionalActive" type="checkbox" [(ngModel)]="professionalDraft.active" class="h-5 w-5 accent-sky-700" /> Ativo</label>
+            <fieldset class="mt-6 border-t pt-5"><legend class="text-sm font-bold">Serviços atendidos</legend>
+              <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                @for (service of services; track service.id) {
+                  @if (service.requiresAppointment) { <label class="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm"><input type="checkbox" [checked]="professionalDraft.serviceIds.includes(service.id)" (change)="toggleId(professionalDraft.serviceIds, service.id, $any($event.target).checked)" class="h-4 w-4 accent-sky-700" />{{ service.name }}</label> }
+                }
+              </div>
+            </fieldset>
+            <fieldset class="mt-6 border-t pt-5"><legend class="text-sm font-bold">Horários semanais</legend>
+              <p class="mt-1 text-sm text-slate-500">Cada dia aceita até dois períodos independentes. O intervalo entre eles fica indisponível. Fuso: {{ tenant?.timeZone }}.</p>
+              <div class="mt-4 hidden grid-cols-[1.3fr_1fr_2fr_2fr] gap-3 px-4 text-xs font-bold uppercase tracking-wide text-slate-500 lg:grid">
+                <span>Dia</span><span>Atendimento</span><span>1º período</span><span>2º período</span>
+              </div>
+              <div class="mt-2 space-y-2">
+                @for (day of weeklyDays; track day.dayOfWeek) {
+                  <div class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.3fr_1fr_2fr_2fr] lg:items-center">
+                    <strong class="text-sm">{{ day.label }}</strong>
+                    <label class="text-xs font-semibold text-slate-600">Status
+                      <select [name]="'status' + day.dayOfWeek" [ngModel]="day.open" (ngModelChange)="setDayOpen(day, $event)" class="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm text-slate-900">
+                        <option [ngValue]="false">Fechado</option><option [ngValue]="true">Por horário</option>
+                      </select>
+                    </label>
+                    <div class="grid grid-cols-2 gap-2" [class.opacity-50]="!day.open">
+                      <label class="text-xs font-semibold text-slate-600">1º início<input [name]="'firstStart' + day.dayOfWeek" type="time" [(ngModel)]="day.firstStart" [disabled]="!day.open" class="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" /></label>
+                      <label class="text-xs font-semibold text-slate-600">1º fim<input [name]="'firstEnd' + day.dayOfWeek" type="time" [(ngModel)]="day.firstEnd" [disabled]="!day.open" class="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" /></label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2" [class.opacity-50]="!day.open">
+                      <label class="text-xs font-semibold text-slate-600">2º início<input [name]="'secondStart' + day.dayOfWeek" type="time" [(ngModel)]="day.secondStart" [disabled]="!day.open" class="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" /></label>
+                      <label class="text-xs font-semibold text-slate-600">2º fim<input [name]="'secondEnd' + day.dayOfWeek" type="time" [(ngModel)]="day.secondEnd" [disabled]="!day.open" class="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" /></label>
+                    </div>
+                  </div>
+                }
+              </div>
+            </fieldset>
+            <section class="mt-6 rounded-xl border border-sky-100 bg-sky-50 p-4"><h4 class="font-bold">Google Calendar</h4>
+              @if (tenant?.googleAuthMode === 'OAUTH_LINKA') {
+                <p class="mt-1 text-sm text-slate-600">Selecione uma conta vinculada a este tenant. Nenhuma conta é selecionada automaticamente.</p>
+                @if (loadingGoogleAccounts) { <p role="status" class="mt-3 text-sm text-slate-600">Consultando contas Google...</p> }
+                @if (googleAccountsError) { <p role="alert" class="mt-3 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">{{ googleAccountsError }}</p> }
+                <div class="mt-4 flex flex-wrap items-end gap-3">
+                  <label class="min-w-0 w-full text-sm font-semibold sm:w-auto sm:flex-1">Conta Google do profissional *
+                    <select name="selectedGoogleAccount" [ngModel]="professionalDraft.googleAccountId || ''" (ngModelChange)="selectGoogleAccount($event)" [disabled]="loadingGoogleAccounts" class="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3">
+                      <option value="">Selecione uma conta</option>
+                      @for (account of googleAccounts; track account.id) {
+                        <option [value]="account.id" [disabled]="!account.selectable && account.id !== professionalDraft.googleAccountId">{{ account.email }}{{ account.isDefault ? ' · padrão' : '' }}{{ account.selectable ? '' : ' · ' + accountStatus(account) }}</option>
+                      }
+                      @if (professionalDraft.googleAccountId && !selectedGoogleAccount) {
+                        <option [value]="professionalDraft.googleAccountId">{{ professionalDraft.email }} · vínculo salvo</option>
+                      }
+                    </select>
+                  </label>
+                  <button type="button" (click)="loadGoogleAccounts()" [disabled]="loadingGoogleAccounts" class="w-full rounded-xl border border-sky-300 px-4 py-3 text-sm font-semibold text-sky-800 disabled:opacity-50 sm:w-auto">Atualizar contas</button>
+                </div>
+                @if (professionalDraft.googleAccountId) {
+                  <p class="mt-2 break-all text-sm text-slate-600">E-mail vinculado: {{ professionalDraft.email }}</p>
+                  @if (selectedGoogleAccount && !selectedGoogleAccount.selectable) { <p role="status" class="mt-2 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">Esta conta está {{ accountStatus(selectedGoogleAccount) }}. O vínculo atual será preservado; novos vínculos estão bloqueados.</p> }
+                  @if (!selectedGoogleAccount && !loadingGoogleAccounts) { <p role="status" class="mt-2 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">A conta salva não está na lista. O vínculo atual será preservado até você escolher outra conta.</p> }
+                }
+              } @else {
+                <p class="mt-1 text-sm text-slate-600">Modo SERVICE_ACCOUNT: informe os identificadores usados pela integração atual.</p>
+                <div class="mt-4 grid gap-4 sm:grid-cols-2"><label class="text-sm font-semibold">ID da conta Google<input name="googleAccountId" [(ngModel)]="professionalDraft.googleAccountId" maxlength="150" class="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3" /></label><label class="text-sm font-semibold">ID do calendário<input name="googleCalendarId" [(ngModel)]="professionalDraft.googleCalendarId" maxlength="255" class="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3" /></label></div>
+              }
+            </section>
+            <div class="mt-7 flex flex-wrap justify-end gap-3"><button type="button" (click)="professionalFormVisible = false" class="rounded-xl border px-5 py-3">Cancelar</button><button type="submit" [disabled]="busy" class="rounded-xl bg-sky-700 px-6 py-3 font-semibold text-white disabled:opacity-50">{{ busy ? 'Salvando...' : 'Salvar profissional' }}</button></div>
+          </form>
+        }
+        <div class="grid gap-4 md:grid-cols-2">
+          @for (professional of professionals; track professional.id) {
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div class="flex items-start justify-between gap-3"><div><h3 class="text-lg font-bold">{{ professional.name }}</h3><p class="text-sm text-slate-500">{{ professional.email }}</p></div><span class="rounded-full px-3 py-1 text-xs font-bold" [class.bg-emerald-100]="professional.active" [class.text-emerald-800]="professional.active" [class.bg-slate-200]="!professional.active">{{ professional.active ? 'Ativo' : 'Inativo' }}</span></div>
+              <p class="mt-4 text-sm text-slate-600">{{ professional.serviceIds.length }} serviço(s) · {{ professional.weeklyIntervals.length }} intervalo(s) semanais</p>
+              @if (professional.googleAccountId) { <p class="mt-2 break-all text-xs text-slate-500">Conta Google: {{ professional.googleAccountId }}</p> }
+              <div class="mt-5 flex flex-wrap gap-4 border-t pt-4 text-sm font-semibold"><button type="button" (click)="editProfessional(professional)" class="text-sky-700">Editar</button><button type="button" [disabled]="busy" (click)="toggleProfessionalActive(professional)" class="text-sky-700">{{ professional.active ? 'Desativar' : 'Ativar' }}</button><button type="button" [disabled]="busy" (click)="deleteProfessional(professional)" class="text-red-700">Excluir</button></div>
+            </article>
+          } @empty { <p class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-slate-500 md:col-span-2">Nenhum profissional cadastrado.</p> }
+        </div>
+      }
+
+      @if (tab === 'agent') {
+        <div class="mb-5"><h2 class="text-xl font-bold">Configurações do Agente de IA</h2><p class="text-sm text-slate-600">Credencial individual e prazo do checkout deste tenant.</p></div>
+        <div class="grid gap-5 lg:grid-cols-2">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-bold">Senha de acesso</h3>
+            <p class="mt-2 text-sm text-slate-600">Estado: <strong>{{ tenant?.agentSecretConfigured ? 'Configurada' : 'Não configurada' }}</strong></p>
+            <p class="mt-2 text-sm text-slate-600">Configure a senha gerada no cabeçalho <code>x-zpro-agent-secret</code> das ferramentas Linka.</p>
+            <div class="mt-5 flex flex-wrap gap-3"><button type="button" [disabled]="busy" (click)="generateSecret()" class="rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{{ tenant?.agentSecretConfigured ? 'Substituir senha' : 'Gerar senha' }}</button>
+              @if (tenant?.agentSecretConfigured) { <button type="button" [disabled]="busy" (click)="revokeSecret()" class="rounded-xl border border-red-300 px-5 py-3 font-semibold text-red-700 disabled:opacity-50">Revogar senha</button> }
+            </div>
+            @if (oneTimeSecret) { <div class="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4"><p class="text-sm font-bold text-amber-900">Copie agora. Esta senha aparece somente uma vez.</p><textarea [value]="oneTimeSecret" readonly rows="2" aria-label="Senha recém-gerada" class="mt-3 w-full resize-none break-all rounded-lg border border-amber-300 bg-white p-3 font-mono text-sm"></textarea><button type="button" (click)="copySecret()" class="mt-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Copiar senha</button></div> }
+          </section>
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-bold">Expiração do link de pagamento</h3>
+            <p class="mt-2 text-sm text-slate-600">Padrão: 30 minutos. Intervalo permitido: 30 a 1440 minutos.</p>
+            <form #settingsForm="ngForm" (ngSubmit)="saveAgentSettings(settingsForm)" class="mt-5"><label class="block text-sm font-semibold">Minutos<input name="expiryMinutes" type="number" [(ngModel)]="expiryMinutes" required min="30" max="1440" class="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label><button type="submit" [disabled]="busy" class="mt-4 rounded-xl bg-sky-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{{ busy ? 'Salvando...' : 'Salvar prazo' }}</button></form>
+          </section>
+        </div>
+      }
+    }
+  </main>
+</div>

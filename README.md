@@ -11,6 +11,10 @@ Domínio: `https://agenda.linkaonline.cloud`
 > apontando para os endpoints do backend; elas ficarão totalmente funcionais quando as integrações
 > de fase 2 (Z-PRO, Google Calendar, Asaas) forem implementadas no backend.
 
+## Painel administrativo
+
+Acesse `/admin/login` após configurar `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` e `TENANT_CONFIG_ENCRYPTION_KEY` no backend. Painel em `/admin/tenants` permite pesquisar, cadastrar, consultar, editar e excluir tenants. Sessão usa cookie HTTP-only e token CSRF; credenciais não são preenchidas na edição. Configure `CORS_ALLOWED_ORIGINS=http://localhost:4200` no backend para desenvolvimento local. Build de produção usa `environment.prod.ts` para acessar API.
+
 ## Requisitos
 
 - Node.js 20+
